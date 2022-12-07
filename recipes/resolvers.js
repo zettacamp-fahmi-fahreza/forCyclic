@@ -10,6 +10,17 @@ async function getActiveMenu(parent,args,context,info) {
             }},
             {$sort: {_id:-1}}
     ]
+    if(args.sorting){
+        if(args.sorting.recipe_name){
+            args.sorting.recipe_name === 'asc' ? aggregateQuery.push({$sort: {recipe_name:-1}}) : aggregateQuery.push({$sort: {recipe_name:1}})
+        }
+        if(args.sorting.price){
+            args.sorting.price === 'asc' ? aggregateQuery.push({$sort: {price:-1}}) : aggregateQuery.push({$sort: {price:1}})
+        }
+        if(args.sorting.sold){
+            args.sorting.sold === 'asc' ? aggregateQuery.push({$sort: {sold:-1}}) : aggregateQuery.push({$sort: {sold:1}})
+        }
+    }
     if(args.highlight) {
         aggregateQuery.push({
             $match: {
@@ -29,17 +40,7 @@ async function getActiveMenu(parent,args,context,info) {
         },
         {$limit: args.limit})
     }
-    if(args.sorting){
-        if(args.sorting.recipe_name){
-            args.sorting.recipe_name === 'asc' ? aggregateQuery.push({$sort: {recipe_name:1}}) : aggregateQuery.push({$sort: {recipe_name:-1}})
-        }
-        if(args.sorting.price){
-            args.sorting.price === 'asc' ? aggregateQuery.push({$sort: {price:1}}) : aggregateQuery.push({$sort: {price:-1}})
-        }
-        if(args.sorting.sold){
-            args.sorting.sold === 'asc' ? aggregateQuery.push({$sort: {sold:1}}) : aggregateQuery.push({$sort: {sold:-1}})
-        }
-    }
+
     if(aggregateQuery.length === 0){
         let result = await recipes.find()
         result.forEach((el)=>{
@@ -91,7 +92,18 @@ async function getAllRecipes(parent,args,context,info) {
         aggregateQuery.push({
             $match: {recipe_name: new RegExp(args.recipe_name, "i")}
         })
-        count = await recipes.count({recipe_name: new RegExp(args.recipe_name, "i")});
+        // count = await recipes.count({recipe_name: new RegExp(args.recipe_name, "i")});
+    }
+    if(args.sorting){
+        if(args.sorting.recipe_name){
+            args.sorting.recipe_name === 'asc' ? aggregateQuery.push({$sort: {recipe_name:-1}}) : aggregateQuery.push({$sort: {recipe_name:1}})
+        }
+        if(args.sorting.price){
+            args.sorting.price === 'asc' ? aggregateQuery.push({$sort: {price:-1}}) : aggregateQuery.push({$sort: {price:1}})
+        }
+        if(args.sorting.sold){
+            args.sorting.sold === 'asc' ? aggregateQuery.push({$sort: {sold:-1}}) : aggregateQuery.push({$sort: {sold:1}})
+        }
     }
     if (args.page){
         aggregateQuery.push({
@@ -99,18 +111,9 @@ async function getAllRecipes(parent,args,context,info) {
         },
         {$limit: args.limit})
     }
-    if(args.sorting){
-        if(args.sorting.recipe_name){
-            args.sorting.recipe_name === 'asc' ? aggregateQuery.push({$sort: {recipe_name:1}}) : aggregateQuery.push({$sort: {recipe_name:-1}})
-        }
-        if(args.sorting.price){
-            args.sorting.price === 'asc' ? aggregateQuery.push({$sort: {price:1}}) : aggregateQuery.push({$sort: {price:-1}})
-        }
-        if(args.sorting.sold){
-            args.sorting.sold === 'asc' ? aggregateQuery.push({$sort: {sold:1}}) : aggregateQuery.push({$sort: {sold:-1}})
-        }
-    }
+    
     let result = await recipes.aggregate(aggregateQuery);
+    count = result.length
     result.forEach((el)=>{
                 el.id = mongoose.Types.ObjectId(el._id)
             })

@@ -12,6 +12,8 @@ type User {
     userType: userType
     role: Role
     balance: Int
+    token: String
+    verify: String
     # cart: [Menu]
     sort: userSort
     fullName: String
@@ -78,6 +80,9 @@ type login {
     user: userLogin
     }
 type Mutation {
+    reqTokenByEmail(
+        email: String
+    ): User
     changePassword(
         email: String,
         fromLogin: Boolean
@@ -86,18 +91,18 @@ type Mutation {
     ): User
     forgotPassword(
         email: String
-        security_question: String
-        security_answer: String
+        token: String
     ) : User
     register(
     img: String
-    password: String!
-    email: String!
-    last_name: String!
-    first_name: String!
+    password: String
+    email: String
+    last_name: String
+    first_name: String
+    verify: Int
     # check_password: String!
-    security_question: String!
-    security_answer: String!
+    security_question: String
+    security_answer: String
     # role: Role!
     ) : User!
     updateUser(

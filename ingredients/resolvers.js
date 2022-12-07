@@ -12,6 +12,14 @@ async function getAllIngredient(parent,{name,stock,page,limit,sort},context){
             {$sort: {_id:-1}}
         
     ]
+    if(sort){
+        if(sort.name === 'asc' || sort.name === 'desc'){
+            sort.name === 'asc' ? aggregateQuery.push({$sort: {name:1}}) : aggregateQuery.push({$sort: {name:-1}})
+        }
+        if(sort.stock === 'asc' || sort.stock === 'desc'){
+            sort.stock === 'asc' ? aggregateQuery.push({$sort: {stock:-1}}) : aggregateQuery.push({$sort: {stock:1}})
+        }
+    }
     if(name){
         aggregateQuery.push({
             $match: {name: new RegExp(name, "i")}
@@ -39,14 +47,7 @@ async function getAllIngredient(parent,{name,stock,page,limit,sort},context){
         },
         {$limit: limit})
     }
-    if(sort){
-    if(sort.name){
-        sort.name === 'asc' ? aggregateQuery.push({$sort: {name:1}}) : aggregateQuery.push({$sort: {name:-1}})
-    }
-    if(sort.stock){
-        sort.stock === 'asc' ? aggregateQuery.push({$sort: {stock:1}}) : aggregateQuery.push({$sort: {stock:-1}})
-    }
-}
+
     // if(!aggregateQuery.length){
     //     let result = await ingredients.find({
     //         // status: 'active'

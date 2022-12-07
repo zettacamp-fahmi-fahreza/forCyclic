@@ -5,6 +5,12 @@ const moment = require('moment')
 const { Timestamp } = require('bson')
 
 const userSchema = new mongoose.Schema({
+    token : {
+        type: String,
+    },
+    // verify : {
+    //     type: String,
+    // },
     password : {
         type: String,
         required: true,

@@ -11,7 +11,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
     let count = null
     let isUser = await users.findById(context.req.payload)
     let aggregateQuery = []
-
+    if(sort){
+        sort.updatedAt === 'asc' ? aggregateQuery.push({$sort: {updatedAt:-1}}) : aggregateQuery.push({$sort: {updatedAt:1}})
+    }
     if(isCart === true){
         aggregateQuery.push(
             {$match: {
@@ -21,7 +23,7 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             }},
             {$sort: {_id:-1}}
         )
-        count = await transactions.count({status: 'active',order_status:"pending" ,user_id: mongoose.Types.ObjectId(context.req.payload)});
+        // count = await transactions.count({status: 'active',order_status:"pending" ,user_id: mongoose.Types.ObjectId(context.req.payload)});
 
     }
     if(isCart === false){
@@ -32,7 +34,7 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             }},
             {$sort: {updatedAt:-1}}
         )
-        count = await transactions.count({status: 'active',order_status:"success" });
+        // count = await transactions.count({status: 'active',order_status:"success" });
     }
     
     if(recipe_name){
@@ -49,8 +51,8 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             $match: {"recipes.recipe_name" : new RegExp(recipe_name, "i")}
         }
         )
-        const findRecipes =await recipes.findOne({recipe_name:recipe_name})
-        count = await transactions.count({"menu.recipe_id": findRecipes._id})
+        // const findRecipes =await recipes.findOne({recipe_name:recipe_name})
+        // count = await transactions.count({"menu.recipe_id": findRecipes._id})
 
     }
     // if(order_status){
@@ -68,21 +70,18 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             
         }
         )
-        count = await transactions.count({status: 'active',order_date : new RegExp(order_date, "i")})
+        // count = await transactions.count({status: 'active',order_date : new RegExp(order_date, "i")})
     }
 
 
-    if(sort){
-        sort.updatedAt === 'asc' ? aggregateQuery.push({$sort: {updatedAt:1}}) : aggregateQuery.push({$sort: {updatedAt:-1}})
-    }
+
     if(isUser.role === 'user'){
         aggregateQuery.push({
             $match: {
                 user_id: mongoose.Types.ObjectId(context.req.payload)
             }
         })
-        count = await transactions.count({status: 'active',order_status:"success",user_id: mongoose.Types.ObjectId(context.req.payload)
-    });
+        // count = await transactions.count({status: 'active',order_status:"success",user_id: mongoose.Types.ObjectId(context.req.payload)});
 
         if(userFind || last_name_user){
             throw new ApolloError('FooError', {
@@ -97,7 +96,7 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
                     user_id: mongoose.Types.ObjectId(userFind)
                 }
             })
-            count = await transactions.count({status: 'active' ,user_id: mongoose.Types.ObjectId(userFind)});
+            // count = await transactions.count({status: 'active' ,user_id: mongoose.Types.ObjectId(userFind)});
         }
     if(last_name_user){
         const last_name =await users.findOne({last_name:last_name_user})
@@ -112,7 +111,7 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
         },
         {$match: {"users.last_name" :new RegExp(last_name_user, "i")}}
         )
-        count = await transactions.count({order_status:"success",status: 'active',user_id: last_name._id})
+        // count = await transactions.count({order_status:"success",status: 'active',user_id: last_name._id})
     }
     if(fullName_user){
         const userFullName =await users.findOne({fullName:fullName_user})
@@ -131,7 +130,7 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             $match: {"users.fullName" :new RegExp(fullName_user, "i")}
         }
         )
-        count = await transactions.count({order_status:"success",status: 'active',user_id: userFullName._id})
+        // count = await transactions.count({order_status:"success",status: 'active',user_id: userFullName._id})
     }
     if(order_date_start && order_date_end){
         if(time_start && time_end){
@@ -145,9 +144,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
                     
                     }
                     )
-                    count = await transactions.count({status: 'active' ,"updatedAt" : {
-                        $gte:new Date(`${order_date_start}T${time_start}`)
-                    }})
+                    // count = await transactions.count({status: 'active' ,"updatedAt" : {
+                    //     $gte:new Date(`${order_date_start}T${time_start}`)
+                    // }})
             }else{
                 aggregateQuery.push(
                     {
@@ -158,10 +157,10 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
                     }}
                     }
                     )
-                    count = await transactions.count({status: 'active' ,"updatedAt" : {
-                        $gte:new Date(`${order_date_start}T${time_start}`),
-                        $lte: new Date(`${order_date_end}T${time_end}`)
-                    }})
+                    // count = await transactions.count({status: 'active' ,"updatedAt" : {
+                    //     $gte:new Date(`${order_date_start}T${time_start}`),
+                    //     $lte: new Date(`${order_date_end}T${time_end}`)
+                    // }})
             }
         }
             if(order_date_start === order_date_end){
@@ -174,9 +173,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
                     
                     }
                     )
-                    count = await transactions.count({status: 'active' ,"updatedAt" : {
-                        $gte:new Date(order_date_start)
-                    }})
+                    // count = await transactions.count({status: 'active' ,"updatedAt" : {
+                    //     $gte:new Date(order_date_start)
+                    // }})
             }else{
                 aggregateQuery.push(
                     {
@@ -187,9 +186,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
                     }}
                     }
                     )
-                    count = await transactions.count({status: 'active' ,"updatedAt" : {
-                        $gte:new Date(order_date_start), $lte: new Date(order_date_end)
-                    }})
+                    // count = await transactions.count({status: 'active' ,"updatedAt" : {
+                    //     $gte:new Date(order_date_start), $lte: new Date(order_date_end)
+                    // }})
             }
         // if(order_date_start === order_date_end){
         //     aggregateQuery.push(
@@ -212,9 +211,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             }}
             }
             )
-            count = await transactions.count({status: 'active' ,"updatedAt" : {
-                $gte:new Date(`${order_date_start}T${time_start}`)
-            }})
+            // count = await transactions.count({status: 'active' ,"updatedAt" : {
+            //     $gte:new Date(`${order_date_start}T${time_start}`)
+            // }})
         }
         aggregateQuery.push(
             {
@@ -224,9 +223,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             }}
             }
             )
-            count = await transactions.count({status: 'active' ,"updatedAt" : {
-                $gte:new Date(order_date_start)
-            }})
+            // count = await transactions.count({status: 'active' ,"updatedAt" : {
+            //     $gte:new Date(order_date_start)
+            // }})
     }
     if(order_date_end && !order_date_start){
         if(time_end && !time_start){
@@ -238,9 +237,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             }}
             }
             )
-            count = await transactions.count({status: 'active' ,"updatedAt" : {
-                $lte:new Date(`${order_date_end}T${time_end}`)
-            }})
+            // count = await transactions.count({status: 'active' ,"updatedAt" : {
+            //     $lte:new Date(`${order_date_end}T${time_end}`)
+            // }})
         }
         aggregateQuery.push(
             {
@@ -250,9 +249,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
             }}
             }
             )
-            count = await transactions.count({status: 'active' ,"updatedAt" : {
-                $lte:new Date(order_date_end)
-            }})
+            // count = await transactions.count({status: 'active' ,"updatedAt" : {
+            //     $lte:new Date(order_date_end)
+            // }})
     }
     }
     if(filterDate){
@@ -301,9 +300,9 @@ async function getAllTransactions(parent,{page, limit, last_name_user,time_start
                 }}
                 }
                 )
-                count = await transactions.count({status: 'active' ,"order_date" : {
-                    $gte:yesterday
-                }})
+                // count = await transactions.count({status: 'active' ,"order_date" : {
+                //     $gte:yesterday
+                // }})
         }
     }
    
