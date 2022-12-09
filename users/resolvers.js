@@ -4,6 +4,7 @@ const { ApolloError} = require('apollo-errors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+const { ifError } = require('assert');
 
 const userType = {
 	"userType_permission" : [
@@ -45,49 +46,20 @@ let transporter = nodemailer.createTransport({
     }
 });
 async function register(parent,args, context, info){
-    // if(args.password != args.check_password){
-    //     throw new ApolloError('FooError', {
-    //         message: 'Password you insert does not match'
-    //     });
-    // }
-    // console.log(!new RegExp(`@gmail.com$`).test(args.email))
+
     if(!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(args.email))throw new Error("Email not valid!")
     if(!new RegExp(`@gmail.com$`).test(args.email)){
         throw new ApolloError('FooError', {
             message: 'Email has to have a domain of "@gmail.com"!'
         });
     }
-    checkEmail = await users.findOne({ email: args.email})
-    if(checkEmail){
+    userCheck = await users.findOne({ email: args.email})
+    if(userCheck){
         throw new ApolloError('FooError', {
             message: 'Email already exist!'
         });
     }
-    let verify = Math.floor(100000 + Math. random() * 900000)
-    // await users.updateOne({email: args.email},{
-    //     verify: verify,
-    // })
-    let mailOptions = {
-        from: '"Warmindo Bosque - Verify Email" <' + process.env.EMAIL +'>', 
-        to: args.email, 
-        subject: "email confirmation to reset password",  
-        html: '<p>Copy and paste this PIN to the website</p> <div style= "width:fit-content;background-color: rgba(0,125,0,0.4);font-size:25px; font-weight:700;">'+token+"</div>"
-    };  
-    await transporter.sendMail(mailOptions);
 
-
-    
-    if (args.verify !== verify ){
-        throw new ApolloError('FooError', {
-            message: 'PIN is wrong, Check your Email please!'
-        });
-    }
-
-    
-
-    // return {messageSent : info}
-
-    
     args.password = await bcrypt.hash(args.password, 5)
     const newUser = new users(args)
     newUser.fullName = args.last_name + ', ' + args.first_name
@@ -105,18 +77,19 @@ async function reqTokenByEmail(parent,args,context){
             message: 'Email has not been register!'
         });
     }
-    let token = Math.floor(100000 + Math. random() * 900000)
-    await users.updateOne({email: args.email},{
-        token: token,
-    })
-   
+    let token = Math.floor(100000 + Math. random() * 900000).toString()
     let mailOptions = {
-        from: '"Warmindo Bosque - Forgot Password" <' + process.env.EMAIL +'>', 
+        from: '"Warmindo Bosque - One Time PIN" <' + process.env.EMAIL +'>', 
         to: args.email, 
-        subject: "email confirmation to reset password",  
+        subject: "email confirmation PIN",  
         html: '<p>Copy and paste this PIN to the website</p> <div style= "width:fit-content;background-color: rgba(0,125,0,0.4);font-size:25px; font-weight:700;">'+token+"</div>"
     };  
     let info = await transporter.sendMail(mailOptions);
+    token = await bcrypt.hash(token,5)
+
+        await users.updateOne({email: args.email},{
+            token: token,
+        })
 
     return {messageSent : info}
 }
@@ -150,7 +123,6 @@ async function getAllUsers(parent,{email,last_name,first_name,page,limit,sort}, 
         sort.first_name ? sort.first_name === 'asc' ? aggregateQuery.push({$sort: {first_name:-1}}) : aggregateQuery.push({$sort: {first_name:1}}) : null
         sort.last_name ? sort.last_name === 'asc' ? aggregateQuery.push({$sort: {last_name:-1}}) : aggregateQuery.push({$sort: {last_name:1}}) : null
     }
-    // console.log(aggregateQuery)
     if(last_name){
         aggregateQuery.push({
             $match: {last_name: new RegExp(last_name, "i") }
@@ -164,17 +136,6 @@ async function getAllUsers(parent,{email,last_name,first_name,page,limit,sort}, 
         )
     }
     
-            // if(aggregateQuery.length === 0){
-            //     let result = await users.find()
-            //     result.forEach((el)=>{
-            //         el.id = mongoose.Types.ObjectId(el.id)
-            //     })
-            //     return {
-            //         count: count,
-            //         // page: 0,
-            //         users: result
-            //         };
-            // }
             let result = await users.aggregate(aggregateQuery);
             count = result.length
             result.forEach((el)=>{
@@ -187,7 +148,6 @@ async function getAllUsers(parent,{email,last_name,first_name,page,limit,sort}, 
                             message: 'Page is Empty!'
                         });
                     }
-                    // console.log(result)
             return {
             count: count,
             max_page: max_page,
@@ -223,7 +183,6 @@ async function logout(parent,args,context){
       });
 }
 async function updateUser(parent, args,context){
-    console.log("tes")
     // if(args.isUsed === true){
     //     throw new ApolloError('FooError', {
     //         message: 'Cannot be change from here!'
@@ -376,14 +335,26 @@ async function forgotPassword(parent,args,context) {
     }
     const checkUser = await users.findOne({email: args.email})
     if(!checkUser) throw new ApolloError('FooError',{message: "Email not found"})
-    // const question = checkUser.security_question
+
     if(args.token){
-        if(checkUser.token != args.token){
+        const checkToken = await bcrypt.compare(args.token, checkUser.token )
+        if(!checkToken){
             throw new ApolloError('FooError', 
             {message: "PIN is Wrong, try again"
             })
         }
     }
+    if(args.new_password){
+        args.new_password = await bcrypt.hash(args.new_password, 5)
+        await users.findOneAndUpdate({email:args.email},{
+            $set:{
+                password: args.new_password
+            }
+        },{
+            new: true
+        })
+    }
+    
     return checkUser
 }
 

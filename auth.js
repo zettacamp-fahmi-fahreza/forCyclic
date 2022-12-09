@@ -15,8 +15,7 @@ async function authMiddleware(resolve,parent,args,context,info) {
     const user = await users.findOne({
         email: decoded.email
     })
-    // console.log(user)
- context.req.payload = user.id
+    context.req.payload = user.id
     return resolve(parent,args,context,info)
 }
 
@@ -33,6 +32,7 @@ module.exports = {
     },
     Mutation: {
         checkoutTransaction: authMiddleware,
+        changePassword: authMiddleware,
         // addUser: authMiddleware,
         // logout: authMiddleware,
         updateUser: authMiddleware,

@@ -92,7 +92,7 @@ async function getAllRecipes(parent,args,context,info) {
         aggregateQuery.push({
             $match: {recipe_name: new RegExp(args.recipe_name, "i")}
         })
-        // count = await recipes.count({recipe_name: new RegExp(args.recipe_name, "i")});
+        count = await recipes.count({recipe_name: new RegExp(args.recipe_name, "i")});
     }
     if(args.sorting){
         if(args.sorting.recipe_name){
@@ -113,7 +113,7 @@ async function getAllRecipes(parent,args,context,info) {
     }
     
     let result = await recipes.aggregate(aggregateQuery);
-    count = result.length
+    // count = result.length
     result.forEach((el)=>{
                 el.id = mongoose.Types.ObjectId(el._id)
             })
@@ -142,6 +142,11 @@ async function createRecipe(parent,args,context,info){
             message: "Ingredient cannot be empty!"
         })
     }
+    if(!RegExp("^[0-9]").test(args.price)){
+        throw new ApolloError('FooError', {
+            message: "Price have to be INTEGER!"
+        })
+    }
     const recipe= {}
     recipe.description = args.description
     recipe.price = args.price
@@ -168,6 +173,11 @@ async function createRecipe(parent,args,context,info){
     return newRecipe
 }
 async function updateRecipe(parent,args,context){
+    if(!RegExp("^[0-9]").test(args.price)){
+        throw new ApolloError('FooError', {
+            message: "Price have to be INTEGER!"
+        })
+    }
     const recipe = await recipes.findByIdAndUpdate(args.id,{
         recipe_name: args.recipe_name,
         description: args.description,
@@ -194,7 +204,6 @@ async function updateRecipe(parent,args,context){
     }
 
     if(args.status === "active" || recipe.status === "active"){
-        // console.log(transaction)
         const tes = await transactions.findOneAndUpdate(
             {"menu.recipe_id": mongoose.Types.ObjectId(args.id)}
             ,{

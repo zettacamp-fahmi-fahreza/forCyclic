@@ -23,54 +23,41 @@ async function createSpecialOffer(parent, { title, description, discountAmount, 
                 message: "Title Required!"
             })
         }
-        specialOffer.description = description.trim()
+        specialOffer.description = description
         specialOffer.menuDiscount = menuDiscount
         specialOffer.status = status
-        let checkId = []
         let checkMenu = await recipes.find()
         checkMenu = checkMenu.map((el) => el.id)
-        let menuMap = menuDiscount.map((el) => el.recipe_id)
-        menuMap.forEach((el) => {
-            if (checkMenu.indexOf(el) === -1) {
+        let discount = menuDiscount.map((el) => el.discount)
+        for(menu of menuDiscount){
+            if (checkMenu.indexOf(menu.recipe_id) === -1) {
                 throw new ApolloError("FooError", {
                     message: "Menu Not Found in Database!"
                 })
             }
-            checkId.push(el)
-        })
-
-        let checkStatusMenu = await recipes.find({
-            _id: {
-                $in: checkId
-            }
-        })
-        for (menu of checkStatusMenu) {
-            console.log(menu)
-            if(menu.status === 'unpublished' || menu.status === 'deleted') {
+            const findMenu = await recipes.findById(menu.recipe_id)
+            if(findMenu.status === 'unpublished' || findMenu.status === 'deleted') {
                 throw new ApolloError("FooError",{
                     message: "Menu You Insert is Unpublished!"
                 })
             }
+            if(status === 'unpublished') {
+                await recipes.findByIdAndUpdate(menu.recipe_id,{
+                    isDiscount: false,
+                    discountAmount: menu.discount
+                },{new:true})
+            }
+            if(status === 'active'){
+                await recipes.findByIdAndUpdate(menu.recipe_id,{
+                    isDiscount: true,
+                    discountAmount: menu.discount
+                },{new:true})
+            }
         }
-        if(status === 'unpublished') {
-            await recipes.updateMany({ _id: {
-                $in: checkId
-            }},{
-                isDiscount: false,
-                discountAmount: discountAmount
-            },{new:true})
-        }
-        if(status === 'active'){
-            await recipes.updateMany({ _id: {
-                $in: checkId
-            }},{
-                isDiscount: true,
-                discountAmount: discountAmount
-            },{new:true})
-        }
-        // const newSpecialOffer = await specialOffers.create(specialOffer)
-        console.log(specialOffer)
-        return specialOffer
+        specialOffer.specialOfferDiscount = Math.max(...discount)
+
+        const newSpecialOffer = await specialOffers.create(specialOffer)
+        return newSpecialOffer
     }
     catch (err) {
         throw new ApolloError('FooError', err)
@@ -84,7 +71,7 @@ async function getAllSpecialOffers(parent, args, context) {
                 status: { $ne: 'deleted' },
             }
         },
-        { $sort: { _id: -1 } }
+        { $sort: { specialOfferDiscount: -1 } }
     ]
     if (args.title) {
         aggregateQuery.push({
@@ -135,57 +122,64 @@ async function updateSpecialOffer(parent,args,context){
     },{
         new: true
     })
-    let checkId = []
-    specialOffer.menuDiscount.map((el) => {
-        if(el.recipe_id.length < 10)throw new ApolloError('FooError',{
-            message: 'Put Appropriate recipe_ID!'
-        })
-        checkId.push(el.recipe_id)
-    } )
-    if(args.status === "unpublished" || args.status === "deleted"){
-        await recipes.updateMany(
-            { _id: {
-                $in: checkId
-            }}
-            ,{
-            $set: {
-                isDiscount: false,
-                discountAmount:0
-            }
-        },{new : true}
-        )
+    if(!specialOffer){
+        throw new ApolloError('FooError', {
+            message: 'Wrong ID!'
+            });
     }
+    let checkMenu = await recipes.find()
+        checkMenu = checkMenu.map((el) => el.id)
+    let discount = args.menuDiscount.map((el) => el.discount)
 
-    if(args.status === "active"){
-        if(args.discountAmount){
-        await recipes.updateMany(
-            { _id: {
-                $in:checkId
-            }}
-            ,{
-            $set: {
-                isDiscount: true,
-                discountAmount: args.discountAmount
+        for(menu of args.menuDiscount){
+            if(menu.recipe_id){
+            
+            if (checkMenu.indexOf(menu.recipe_id) === -1) {
+                throw new ApolloError("FooError", {
+                    message: "Menu Not Found in Database!"
+                })
             }
-        },{new : true}
-        )
+            const findMenu = await recipes.findById(menu.recipe_id)
+            if(findMenu.status === 'unpublished' || findMenu.status === 'deleted') {
+                throw new ApolloError("FooError",{
+                    message: "Menu You Insert is Unpublished!"
+                })
+            }
         }
-        await recipes.updateMany(
-            { _id: {$in:checkId}}
-            ,{
-            $set: {
-                isDiscount: true,
+            if(args.status === 'deleted') {
+                await specialOffers.findByIdAndUpdate(args.id,{
+                    specialOfferDiscount : 0
+                },{
+                    new: true
+                })
+                await recipes.findByIdAndUpdate(menu.recipe_id,{
+                    isDiscount: false,
+                    discountAmount: 0
+                },{new:true})
+            }else{
+                await specialOffers.findByIdAndUpdate(args.id,{
+                    specialOfferDiscount : Math.max(...discount)
+                },{
+                    new: true
+                })
             }
-        },{new : true}
-        )
-    }
+            if(args.status === 'unpublished') {
+                await recipes.findByIdAndUpdate(menu.recipe_id,{
+                    isDiscount: false,
+                    discountAmount: menu.discount
+                },{new:true})
+            }
+            if(args.status === 'active'){
+                await recipes.findByIdAndUpdate(menu.recipe_id,{
+                    isDiscount: true,
+                    discountAmount: menu.discount
+                },{new:true})
+            }
+        }
     if(specialOffer){
-        console.log(`Update specialOffer: ${specialOffer.specialOffer_name}`)
         return specialOffer
         }
-    throw new ApolloError('FooError', {
-        message: 'Wrong ID!'
-        });
+    
     }
 const resolverSpecialOffer = {
     Query: {

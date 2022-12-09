@@ -82,16 +82,18 @@ type login {
 type Mutation {
     reqTokenByEmail(
         email: String
+        fromRegister: Boolean
     ): User
     changePassword(
-        email: String,
-        fromLogin: Boolean
+        # email: String,
+        # fromLogin: Boolean
         old_password: String
         new_password: String
     ): User
     forgotPassword(
         email: String
         token: String
+        new_password: String
     ) : User
     register(
     img: String
@@ -99,7 +101,7 @@ type Mutation {
     email: String
     last_name: String
     first_name: String
-    verify: Int
+    # verify: String
     # check_password: String!
     security_question: String
     security_answer: String

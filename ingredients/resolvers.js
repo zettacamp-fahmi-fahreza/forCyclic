@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const {ingredients, recipes} = require('../schema');
 const { ApolloError} = require('apollo-errors');
+const { ifError } = require('assert');
 
 async function getAllIngredient(parent,{name,stock,page,limit,sort},context){
     const tick = Date.now()
@@ -55,7 +56,6 @@ async function getAllIngredient(parent,{name,stock,page,limit,sort},context){
     //     result.forEach((el)=>{
     //         el.id = mongoose.Types.ObjectId(el._id)
     //     })
-    //     // console.log(`total time: ${Date.now()- tick} ms`)
     //     return {
     //         count: count,
     //         // page: 0,
@@ -66,7 +66,6 @@ async function getAllIngredient(parent,{name,stock,page,limit,sort},context){
                 result.forEach((el)=>{
                             el.id = mongoose.Types.ObjectId(el._id)
                         })
-                        console.log(`total time: ${Date.now()- tick} ms`)
                         if(!page){
                             count = result.length
                         }
@@ -95,6 +94,7 @@ async function addIngredient(parent,args,context){
             message: 'Ingredient Already Exists!'
         })
     }
+    args.name = args.name.toLowerCase()
     const newIngredient = new ingredients(args)
     await newIngredient.save()
     return newIngredient;
@@ -104,7 +104,19 @@ async function getOneIngredient(parent,args,context){
     return getOneIngredient
 }
 async function updateIngredient(parent,args,context){
-    console.log(typeof(args.id))
+    if(args.name){
+        args.name = args.name.toLowerCase()
+    }
+    // const findDuplicate = await ingredients.findOne({
+    //     name:  new RegExp("^" + args.name.trim("") + "$", 'i')
+
+    // })
+    // if(findDuplicate){
+    //     throw new ApolloError('FooError', {
+    //         message: 'Ingredient Already Exists!'
+    //     })
+    // }
+    
     if(args.stock < 0){
         throw new ApolloError('FooError', {
             message: 'Stock Cannot be less than 0!'
@@ -148,12 +160,11 @@ async function updateIngredient(parent,args,context){
 // }
 
 async function findIngredientInRecipe(id) {
-    const checkRecipe = await recipes.find({ ingredients: { $elemMatch: { ingredient_id: mongoose.Types.ObjectId(id) } } })
+    const checkRecipe = await recipes.find({ ingredients: { $elemMatch: { ingredient_id: mongoose.Types.ObjectId(id) } } , status: 'active'})
     if (!checkRecipe.length) return true
     return false;
 }
 async function deleteIngredient(parent,args,context) {
-    console.log(args.id)
     const checkIngredient = await findIngredientInRecipe(args.id)
     if (!checkIngredient){
         throw new ApolloError('FooError', {

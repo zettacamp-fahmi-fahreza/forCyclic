@@ -172,12 +172,6 @@ const recipesSchema = new mongoose.Schema({
         default: 0,
         min: 0
     }
-
-    // publish_status: {
-    //     type: String,
-    //     enum: ['unpublished', 'published'],
-    //     default: 'unpublished'
-    // },
     
 })
 const specialOffersSchema = new mongoose.Schema({
@@ -195,16 +189,23 @@ const specialOffersSchema = new mongoose.Schema({
         enum: ["active", "deleted","unpublished"],
         default: 'unpublished'
     },
-
     menuDiscount: [
         {
             recipe_id:{
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "Recipes",
                 required: true
+            },
+            discount: {
+                type: Number,
+                min: 0,
             }
         }
     ],
+    specialOfferDiscount: {
+        type: Number,
+        min: 0,
+    }
 })
 const transactionsSchema = new mongoose.Schema({
     user_id:{
