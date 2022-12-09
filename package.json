@@ -169,7 +169,7 @@
     "scripts": {
             "start": "node app.js",
             "dev": "nodemon app.js"
-         }
+         },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zettacamp-fahmi-fahreza/cisi_zettacamp_catfish.git"
