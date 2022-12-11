@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const {recipes,specialOffers } = require('../schema');
+const {recipes, specialOffers } = require('../schema');
 const { ApolloError } = require('apollo-errors');
-
 async function createSpecialOffer(parent, { title, description, menuDiscount, status }, context, info) {
     try {
         if (!menuDiscount || !menuDiscount.length) {
@@ -9,8 +8,6 @@ async function createSpecialOffer(parent, { title, description, menuDiscount, st
                 message: "Menu cannot be empty!"
             })
         }
-
-       
         
         const specialOffer = {}
         specialOffer.title = title.trim()
